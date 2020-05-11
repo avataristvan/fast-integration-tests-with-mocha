@@ -129,7 +129,7 @@ In this case ``nyc`` executes ``npm run test`` running a couple of test runners 
 Splitting the tests into chunks, in order to restart the server in beween, reduced the execution time from above 30 minutes to 6 minutes.
 
 # Conclusions
-* Using multiple statements as db-cleanup-query reduced CPU consumption.
+* Using multiple statements in form of a single db-cleanup-query reduced CPU consumption.
 * Chunking integration- and repository tests reduced local and deployment execution time. 
  
 More research needs to be done. Integration tests should not slow down each other! 
