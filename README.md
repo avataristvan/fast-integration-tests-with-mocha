@@ -1,1 +1,1 @@
-# fast-integration-tests-with-mocha
+# fast integration tests with mocha
