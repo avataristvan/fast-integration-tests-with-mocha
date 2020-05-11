@@ -1,14 +1,16 @@
 During the last three months my team wrote a lot of integration and repository tests, due a couple of to new features.
 Over time those tests became extremely slow.
+
 It was such a pain, that we came up to think about how many of those tests we can cope, 
 because a full test run took at least half an hour now.
 ## The environment
 * loopback 3 with mysql-connector-module and mysql.js under the hood
 * mocha, chai as test modules
 * mariadb
+
 So nothing special in a NodeJS world.
 
-We ran into a couple of problems
+## We ran into a couple of problems
 * The deployment pipelines get slower test by test in big steps. 
 * The developers tend accept that slowness.
 * Thinking about kicking some tests out.
@@ -22,24 +24,34 @@ Here is a collection of ideas, o got during my research
 : not an option, because the database needs to be cleaned up after every single test
 * [keep mysql data files in a RAM-disk](https://vladmihalcea.com/how-to-run-database-integration-tests-20-times-faster/)
 : too tricky, because of different OS between developers
-* 
 
 I focused on
-1. tweak database cleanups
+1. tweaking database cleanups
 2. the idea, running integration tests in chunks
 
-## Tweak Database Cleanups
+## Tweaking Database Cleanups
 ### truncate vs delete
 As already mentioned on other sites, ``truncate`` may be faster than ``delete``. 
 In our situation ``delete`` was the better choice. 
 
 If you want to read more about the possible reasons, please read the performance section on [truncate documentation at mariadb.com](https://mariadb.com/kb/en/truncate-table/)
 
-### Reduce simultaneous db connections
-Using Promises for every single table generates a full CPU-load by the mysql daemon.
+### Reducing simultaneous db connections
+Using Promises for every single table generates a full CPU-load by the mysql daemon, when running in parallel-tasks, caught by ``Promise.all()``.
+```javascript
+const deletionTasks = [];
 
-To decrease the load, ``multipleStatements`` needs to be enabled just for the testing environment. A good solution is to create an extra database config.
-Please *don't* enable multipleStatements in the default db config: It opens the doors for mysql injections! It has a good reason, why it's disabled by default.
+tableModels.forEach((tableModel) => {
+    promiseTasks.push(mySingleTableDeletion(tableModel))
+});
+
+return Promise.all(deletionTasks);
+```
+The daemon needs to deal 
+* with multiple connections.
+* foreign keys
+
+``multipleStatements`` was set to enabled in the configuration just for the testing environment. A good solution is to create an extra database config.
 
 In case of integration tests setting this flag allowed me to write one single empty-database-query block resetting all tables.
 ```sql
@@ -47,6 +59,9 @@ DELETE QUICK FROM table1; ALTER TABLE table1 AUTO_INCREMENT = 1;
 DELETE QUICK FROM table2; ALTER TABLE table2 AUTO_INCREMENT = 1;
 ...
 ```
+__Attention:__ Please *don't* enable multipleStatements in the default db config: 
+It opens the doors for mysql injections! 
+It has a good reason, why it's disabled by default in several frameworks.
 
 With ``"multipleStatements": "on"`` the CPU-load decreased to the pure script execution.
 * Sending a single query for each table opens a lot of connections, the mysql daemon have to deal with.
