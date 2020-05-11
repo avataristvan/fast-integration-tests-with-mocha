@@ -26,7 +26,7 @@ Here is a collection of ideas, o got during my research
 
 I focused on
 1. tweak database cleanups
-2. the idea, run integration tests in chunks
+2. the idea, running integration tests in chunks
 
 ## Tweak Database Cleanups
 ### truncate vs delete
@@ -110,7 +110,7 @@ Starting integration tests per context just took 6 min in summary!
 ```
 In this case ``nyc`` executes ``npm run test`` running a couple of test runners of test runners.
 
-### The benefit
+#### The benefit
 Splitting the tests into chunks, in order to restart the server in beween, reduced the execution time from above 30 minutes to 6 minutes.
 
 ### Conclusions
